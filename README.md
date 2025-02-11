@@ -49,29 +49,37 @@ The script will:
 
 ## Data Structure
 
-Products are saved with the following structure:
+The data is saved in the following format:
 
 ```json
 {
-    "id": 123,
-    "title": "Product Name",
-    "permalink": "product-url-slug",
-    "available": true,
-    "availableUnits": 10,
-    "lineOfProduct": "RENT",
-    "pricing": {
-        "discount": {...},
-        "discountPercentage": {...},
-        "monthlyRental": {...},
-        "strikePrice": {...}
-    },
-    "description": "Product description",
-    "specifications": {...},
-    "features": [...],
-    "dimensions": {...},
-    "additionalInfo": {...}
+    "totalProducts": 123,
+    "products": [
+        {
+            "id": 456,
+            "title": "Product Name",
+            "permalink": "product-url-slug",
+            "available": true,
+            "availableUnits": 10,
+            "lineOfProduct": "RENT",
+            "pricing": {
+                "discount": {...},
+                "discountPercentage": {...},
+                "monthlyRental": {...},
+                "strikePrice": {...}
+            },
+            "description": "Product description",
+            "specifications": {...},
+            "features": [...],
+            "dimensions": {...},
+            "additionalInfo": {...}
+        },
+        // ... more products
+    ]
 }
 ```
+
+Each product is added to the products array, and the totalProducts count is automatically updated.
 
 ## Configuration
 
@@ -94,6 +102,7 @@ The script includes configurable parameters:
 - Files are named by date: `products_YYYYMMDD.json`
 - Each product is saved immediately after fetching
 - Previous data is preserved and updated
+- Total product count is maintained automatically
 
 ## Requirements
 

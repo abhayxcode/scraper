@@ -108,17 +108,31 @@ def get_all_products() -> Optional[ProductResponse]:
         if not data or 'data' not in data or 'products' not in data['data']:
             logger.error("Invalid response format")
             return None
+        
+        try:
+            # Convert each product to a dictionary if it isn't already
+            products_data = []
+            for product in data['data']['products']:
+                if isinstance(product, dict):
+                    products_data.append(product)
+                else:
+                    products_data.append(product.dict() if hasattr(product, 'dict') else dict(product))
             
-        return ProductResponse(
-            products=data['data']['products'],
-            total_count=len(data['data']['products'])
-        )
+            return ProductResponse(
+                products=products_data,
+                total_count=len(products_data)
+            )
+        except Exception as e:
+            logger.error(f"Error converting products data: {str(e)}")
+            logger.error(f"Raw products data: {json.dumps(data['data']['products'][:2], indent=2)}")  # Log first 2 products for debugging
+            return None
     
     except requests.RequestException as e:
         logger.error(f"Error fetching products: {str(e)}")
         return None
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
+        logger.error(f"Error details: {str(e)}")
         return None
 
 def get_product_details(list_product: ListProduct) -> Optional[Product]:
@@ -180,22 +194,27 @@ def save_product_to_file(product: Product):
     filename = output_dir / f"products_{today}.json"
     
     # Load existing data if file exists
-    existing_data = []
+    data = {
+        "totalProducts": 0,
+        "products": []
+    }
+    
     if filename.exists():
         try:
             with open(filename, 'r') as f:
-                existing_data = json.load(f)
+                data = json.load(f)
         except json.JSONDecodeError:
             logger.warning(f"Could not read existing file {filename}, starting fresh")
     
-    # Add new product to existing data
-    existing_data.append(product.dict())
+    # Add new product to existing data and update count
+    data["products"].append(product.dict())
+    data["totalProducts"] = len(data["products"])
     
     # Save the updated data
     with open(filename, 'w') as f:
-        json.dump(existing_data, f, indent=2, default=str)
+        json.dump(data, f, indent=2, default=str)
     
-    logger.info(f"Saved product {product.id} (Total products: {len(existing_data)})")
+    logger.info(f"Saved product {product.id} (Total products: {data['totalProducts']})")
 
 def main():
     interval = 300  # 5 minutes
@@ -212,8 +231,9 @@ def main():
                 products_processed = 0
                 for list_product in products_response.products:
                     try:
-                        # First convert to ListProduct to ensure data is valid
-                        list_product_obj = ListProduct(**list_product.dict())
+                        # Ensure list_product is a dictionary before conversion
+                        list_product_dict = list_product if isinstance(list_product, dict) else list_product.dict()
+                        list_product_obj = ListProduct(**list_product_dict)
                         product_details = get_product_details(list_product_obj)
                         if product_details:
                             # Save each product immediately after fetching its details
@@ -221,7 +241,12 @@ def main():
                             products_processed += 1
                         time.sleep(0.1)  # Small delay between requests to avoid rate limiting
                     except Exception as e:
-                        logger.error(f"Error processing product {list_product.get('id', 'unknown')}: {str(e)}")
+                        # Use safe attribute access for error logging
+                        product_id = (
+                            list_product.get('id', 'unknown') if isinstance(list_product, dict)
+                            else getattr(list_product, 'id', 'unknown')
+                        )
+                        logger.error(f"Error processing product {product_id}: {str(e)}")
                         continue
                 
                 logger.info(f"Finished processing {products_processed} products")
