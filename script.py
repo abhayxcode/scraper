@@ -19,10 +19,6 @@ class ImageWithAspectRatio(BaseModel):
     aspectRatio: float
     url: str
 
-class DeliveryInfo(BaseModel):
-    displayValue: str
-    value: str
-
 class PricingValue(BaseModel):
     displayValue: str
     value: float
@@ -32,13 +28,6 @@ class PricingDiscount(BaseModel):
     discountPercentage: PricingValue
     monthlyRental: PricingValue
     strikePrice: PricingValue
-
-class VariantCount(BaseModel):
-    displayValue: str
-    value: int
-
-class Variants(BaseModel):
-    count: VariantCount
 
 # Base product model with common fields
 class BaseProduct(BaseModel):
@@ -59,19 +48,6 @@ class BaseProduct(BaseModel):
 # Model for products from list view
 class ListProduct(BaseProduct):
     pass
-
-# Model for detailed product view with additional fields
-class DetailedProduct(BaseProduct):
-    description: Optional[str]
-    specifications: Optional[Dict]
-    variantConfiguration: Optional[List[Dict]]
-    collection: Optional[List[Dict]]
-    features: Optional[List[Dict]]
-    dimensions: Optional[Dict]
-    additionalInfo: Optional[Dict]
-    
-    class Config:
-        extra = "ignore"
 
 # Combined product model
 class Product(BaseModel):
